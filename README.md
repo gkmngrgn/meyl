@@ -1,0 +1,2 @@
+# seg
+Static Email Generator

@@ -29,4 +29,5 @@ seg send --template=templates/dst/wedding-invitation/ \
 ## TO DO
 
 [ ] choose a template engine to render email contents.
+[x] I also need a arg parser for CLI.
 [x] create project skeleton.

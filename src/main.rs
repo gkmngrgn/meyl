@@ -1,14 +1,15 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
+// use tera::Tera;
 
-#[derive(StructOpt, Debug)] // do we need Debug here?
+#[derive(StructOpt)]
 #[structopt(name = "seg")]
 struct Opt {
     #[structopt(subcommand)]
     cmd: Sub,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt)]
 #[structopt(about = "Static Email Generator")]
 enum Sub {
     /// Generates all available emails using [SOURCE] folder
@@ -42,6 +43,24 @@ enum Sub {
 
 fn main() {
     let opt = Opt::from_args();
-    println!("Hello, world!");
-    println!("Params: {:#?}", opt);
+    match opt.cmd {
+        Sub::Generate {
+            source,
+            destination,
+        } => {
+            println!("command is generate.");
+            println!("source: {:?}, destination: {:?}", source, destination);
+        }
+        Sub::Send {
+            template,
+            subject,
+            email,
+        } => {
+            println!("command is send.");
+            println!(
+                "template: {:?}, subject: {}, email: {}",
+                template, subject, email
+            );
+        }
+    }
 }

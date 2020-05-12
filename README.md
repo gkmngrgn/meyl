@@ -38,7 +38,9 @@ auto-generate it for making your emails more accessible for all human being.
 
 ## TO DO
 
+[ ] minify css and html contents.
+[ ] embed css files to the email template automatically.
 [ ] support to embed markdown files to the email body as a variable.
-[ ] choose a template engine to render email contents.
+[x] choose a template engine to render email contents.
 [x] I also need a arg parser for CLI.
 [x] create project skeleton.

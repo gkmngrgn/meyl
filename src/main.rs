@@ -1,6 +1,6 @@
+use seg;
 use std::path::PathBuf;
 use structopt::StructOpt;
-// use tera::Tera;
 
 #[derive(StructOpt)]
 #[structopt(name = "seg")]
@@ -48,8 +48,11 @@ fn main() {
             source,
             destination,
         } => {
-            println!("command is generate.");
-            println!("source: {:?}, destination: {:?}", source, destination);
+            let msg = match seg::template::generate_all_templates(source, destination) {
+                Ok(_) => "All templates are generated successfully.".to_string(),
+                Err(msg) => msg,
+            };
+            println!("{}", msg);
         }
         Sub::Send {
             template,

@@ -1,12 +1,11 @@
+pub mod constants;
+pub mod template;
+
 use std::fs;
 use std::path::PathBuf;
 
-const BODY_FILENAME: &str = "body.html";
-// const BODY_TEXT_FILENAME: &str = "body_text.html";
-const SUBJECT_FILENAME: &str = "subject.html";
-
 fn is_valid_template_dir(template_dir: &PathBuf) -> bool {
-    [BODY_FILENAME, SUBJECT_FILENAME]
+    [constants::FILE_BODY, constants::FILE_SUBJECT]
         .iter()
         .all(|filename| template_dir.join(filename).exists())
 }

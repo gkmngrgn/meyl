@@ -35,12 +35,47 @@ All templates should have:
 You don't need to create also a body_text.html but in case, SEG will
 auto-generate it for making your emails more accessible for all human being.
 
+```
+|
+|- dst                       Destination Template Folder
+|  |- payroll                Template Name: Payroll
+|  |  |- body.html           Email Content
+|  |  |- body_text.html      Email Content (in Text Format)
+|  |  |- subject.html        Subject
+|  |
+|  |- wedding-invitation     Template Name: Wedding Invitation
+|  |  |- body.html           Email Content
+|  |  |- body_text.html      Email Content in Text Format
+|  |  |- subject.html        Subject
+|
+|- src                       Source Template Folder
+|  |- base.html              Base Template
+|  |- style.css              Styles
+|  |- partials               Template Partials
+|  |  |- button.html
+|  |  |- title.html
+|  |- payroll
+|  |  |- body.html
+|  |  |- subject.html
+|  |- wedding-information
+|  |  |- body.html
+|  |  |- body_text.html
+|  |  |- subject.html
+|
+```
+
 ## TO DO
 
-[ ] multilanguage support.
-[ ] minify css and html contents.
-[ ] embed css files to the email template automatically.
-[ ] support to embed markdown files to the email body as a variable.
-[x] choose a template engine to render email contents.
-[x] I also need a arg parser for CLI.
-[x] create project skeleton.
+- [x] change Email struct parameters: src_dir, dst_dir, template_name.
+      src_dir will be main template folder.
+      dst_dir will be main template output folder.
+      template_name will be just a &str.
+      So you can remove `tera` from the parameter.
+- [ ] multilanguage support.
+- [ ] minify rendered outputs.
+- [ ] use eyeliner instead of inline_assets to embed only used styles.
+- [x] make css styles inline for html templates.
+- [ ] support to embed markdown files to the email body as a variable.
+- [x] choose a template engine to render email contents.
+- [x] I also need a arg parser for CLI.
+- [x] create project skeleton.

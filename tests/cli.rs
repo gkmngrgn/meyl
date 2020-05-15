@@ -1,7 +1,6 @@
 mod helpers;
 
 use seg;
-use std::path::PathBuf;
 
 #[test]
 fn find_all_template_folders() {
@@ -10,9 +9,6 @@ fn find_all_template_folders() {
     assert!(template_folders.is_ok());
     assert_eq!(
         template_folders.unwrap(),
-        &[
-            PathBuf::from("examples/src/payroll"),
-            PathBuf::from("examples/src/wedding-invitation")
-        ]
+        &["payroll".to_string(), "wedding-invitation".to_string()]
     );
 }

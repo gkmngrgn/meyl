@@ -1,4 +1,5 @@
 use seg;
+use seg::template::{generate_all_templates, ErrorKind};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -48,9 +49,19 @@ fn main() {
             source,
             destination,
         } => {
-            let msg = match seg::template::generate_all_templates(source, destination) {
-                Ok(_) => "All templates are generated successfully.".to_string(),
-                Err(msg) => msg,
+            // TODO: the error messages should
+            let msg = match generate_all_templates(source, destination) {
+                Ok(_) => "All templates are generated successfully.",
+                Err(e) => match e {
+                    ErrorKind::Style => "The style path is not correct.",
+                    ErrorKind::InvalidDirectory => {
+                        "The template engine couldn't find the source or destination directory."
+                    }
+                    ErrorKind::MissingContext => "There are undefined variables in the template.",
+                    ErrorKind::DirectoryAccess => {
+                        "There's no access to write template files to the destination directory."
+                    }
+                },
             };
             println!("{}", msg);
         }

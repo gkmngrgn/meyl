@@ -1,11 +1,21 @@
+use inline_assets::{inline_html_string, Config as InlinerConfig};
 use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
 
 use crate::{constants, find_all_templates};
 
+#[derive(Debug)]
+pub enum ErrorKind {
+    Style,
+    MissingContext,
+    InvalidDirectory,
+    DirectoryAccess,
+}
+
 struct Email {
-    tera: Tera,
+    template: Tera,
+    template_name: String,
     src_dir: PathBuf,
     dst_dir: PathBuf,
     context_data: Context,
@@ -15,15 +25,23 @@ struct Email {
 }
 
 impl Email {
-    fn new(tera: Tera, src_dir: PathBuf, dst_dir: PathBuf) -> Self {
-        Self {
-            tera,
-            src_dir,
-            dst_dir,
-            subject: "".to_string(),
-            body: "".to_string(),
-            body_text: "".to_string(),
-            context_data: Context::new(),
+    fn new(src_dir: PathBuf, dst_dir: PathBuf, template_name: String) -> Result<Self, ErrorKind> {
+        let template_dir = src_dir.join("**").join("*.html");
+        match Tera::new(template_dir.to_str().unwrap()) {
+            Ok(template) => {
+                let email = Self {
+                    template,
+                    template_name,
+                    src_dir,
+                    dst_dir,
+                    subject: "".to_string(),
+                    body: "".to_string(),
+                    body_text: "".to_string(),
+                    context_data: Context::new(),
+                };
+                Ok(email)
+            }
+            Err(_) => Err(ErrorKind::InvalidDirectory),
         }
     }
 
@@ -31,29 +49,32 @@ impl Email {
         self.context_data.insert(name, value);
     }
 
-    fn render_template(&mut self, template_name: &str) -> Result<String, String> {
-        let template_name = format!(
-            "{}/{}",
-            self.src_dir.iter().last().unwrap().to_str().unwrap(), // WTF??
-            template_name
-        );
-        match self.tera.render(&template_name, &self.context_data) {
-            Ok(html) => Ok(html),
-            Err(e) => {
-                return Err(format!(
-                    "There are undefined variables in the template. {}",
-                    e
-                ));
+    fn render(&mut self, file_name: &str, is_html: bool) -> Result<String, ErrorKind> {
+        let template_name = format!("{}/{}", self.template_name, file_name);
+        match self.template.render(&template_name, &self.context_data) {
+            Ok(mut rendered) => {
+                rendered = if is_html {
+                    self.embed_styles(&rendered)?
+                } else {
+                    self.strip_tags(&rendered)?
+                };
+                Ok(rendered)
             }
+            Err(_) => Err(ErrorKind::MissingContext),
         }
     }
 
-    fn render_templates(&mut self) -> Result<(), String> {
-        self.subject = self.render_template(constants::FILE_SUBJECT)?;
+    fn render_template(&mut self) -> Result<(), ErrorKind> {
+        self.subject = self.render(constants::FILE_SUBJECT, false)?;
         self.add_context_data(constants::VAR_SUBJECT, self.subject.clone().as_str());
-        self.body = self.render_template(constants::FILE_BODY)?;
-        self.body_text = if self.src_dir.join(constants::FILE_BODY_TEXT).exists() {
-            self.render_template(constants::FILE_BODY_TEXT)?
+        self.body = self.render(constants::FILE_BODY, true)?;
+        self.body_text = if self
+            .src_dir
+            .join(&self.template_name)
+            .join(constants::FILE_BODY_TEXT)
+            .exists()
+        {
+            self.render(constants::FILE_BODY_TEXT, false)?
         } else {
             self.strip_tags(self.body.clone().as_str())?
         };
@@ -61,44 +82,44 @@ impl Email {
     }
 
     fn save_rendered_outputs(self) -> std::io::Result<()> {
-        fs::write(self.dst_dir.join(constants::FILE_SUBJECT), self.subject)?;
-        fs::write(self.dst_dir.join(constants::FILE_BODY), self.body)?;
-        fs::write(self.dst_dir.join(constants::FILE_BODY_TEXT), self.body_text)?;
+        let dst_dir = self.dst_dir.join(&self.template_name);
+        fs::write(dst_dir.join(constants::FILE_SUBJECT), self.subject)?;
+        fs::write(dst_dir.join(constants::FILE_BODY), self.body)?;
+        fs::write(dst_dir.join(constants::FILE_BODY_TEXT), self.body_text)?;
         Ok(())
     }
 
-    fn strip_tags(&mut self, _text: &str) -> Result<String, String> {
+    fn strip_tags(&mut self, text: &str) -> Result<String, ErrorKind> {
         // TODO: we need to prepare a new function to strip html tags from body.
-        Ok("".to_string())
+        Ok(text.to_string())
+    }
+
+    fn embed_styles(&mut self, text: &str) -> Result<String, ErrorKind> {
+        match inline_html_string(text, &self.src_dir, InlinerConfig::default()) {
+            Ok(embedded) => Ok(embedded),
+            Err(_) => Err(ErrorKind::Style),
+        }
     }
 }
 
-pub fn generate_all_templates(src_dir: PathBuf, dst_dir: PathBuf) -> Result<(), String> {
-    let templates_dir = src_dir.join("**").join("*.html");
-    match Tera::new(templates_dir.to_str().unwrap()) {
-        Ok(tera) => {
-            let templates = find_all_templates(src_dir);
-            if let Err(e) = templates {
-                return Err(format!("Template directory error: {}", e));
-            }
-
-            for template_src in templates.unwrap() {
-                let template_dst = dst_dir.join(template_src.iter().last().unwrap());
-                if let Err(e) = fs::create_dir_all(&template_dst) {
-                    return Err(format!("Error: directory couldn't be created. {}", e));
+pub fn generate_all_templates(src_dir: PathBuf, dst_dir: PathBuf) -> Result<(), ErrorKind> {
+    match find_all_templates(src_dir.clone()) {
+        Ok(template_names) => {
+            for template_name in template_names {
+                let template_dst = dst_dir.join(&template_name);
+                if let Err(_) = fs::create_dir_all(&template_dst) {
+                    return Err(ErrorKind::InvalidDirectory);
                 }
-                let mut email = Email::new(tera.clone(), template_src, template_dst);
-                match email.render_templates() {
-                    Ok(_) => {
-                        if let Err(e) = email.save_rendered_outputs() {
-                            return Err(format!("read error: {}", e));
-                        }
-                    }
-                    Err(e) => return Err(e),
+                // TODO: do we need to clone these paths?
+                let mut email =
+                    Email::new(src_dir.clone(), dst_dir.clone(), template_name.clone())?;
+                email.render_template()?;
+                if let Err(_) = email.save_rendered_outputs() {
+                    return Err(ErrorKind::DirectoryAccess);
                 }
             }
             Ok(())
         }
-        Err(e) => Err(format!("Template parsing error: {}", e)),
+        Err(_) => Err(ErrorKind::InvalidDirectory),
     }
 }

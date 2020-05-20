@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 inline_assets = "0.4.1"
+minifier = { version = "0.0.36", features = ["html"] }
 structopt = "0.3.14"
 tera = "1.2.0"
 

@@ -66,16 +66,14 @@ auto-generate it for making your emails more accessible for all human being.
 
 ## TO DO
 
-- [x] change Email struct parameters: src_dir, dst_dir, template_name.
-      src_dir will be main template folder.
-      dst_dir will be main template output folder.
-      template_name will be just a &str.
-      So you can remove `tera` from the parameter.
 - [ ] multilanguage support.
-- [ ] minify rendered outputs.
-- [ ] use eyeliner instead of inline_assets to embed only used styles.
-- [x] make css styles inline for html templates.
+- [ ] allow only BODY content in html files, we can add HTML and HEAD parts
+      programmatically.
+- [ ] digest css styles to html inside.
 - [ ] support to embed markdown files to the email body as a variable.
+- [x] change Email struct parameters: src_dir, dst_dir, template_name.
+- [x] minify rendered outputs.
+- [x] make css styles inline for html templates.
 - [x] choose a template engine to render email contents.
 - [x] I also need a arg parser for CLI.
 - [x] create project skeleton.

@@ -1,4 +1,5 @@
 use inline_assets::{inline_html_string, Config as InlinerConfig};
+use minifier;
 use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -34,10 +35,10 @@ impl Email {
                     template_name,
                     src_dir,
                     dst_dir,
+                    context_data: Context::new(),
                     subject: "".to_string(),
                     body: "".to_string(),
                     body_text: "".to_string(),
-                    context_data: Context::new(),
                 };
                 Ok(email)
             }
@@ -96,7 +97,7 @@ impl Email {
 
     fn embed_styles(&mut self, text: &str) -> Result<String, ErrorKind> {
         match inline_html_string(text, &self.src_dir, InlinerConfig::default()) {
-            Ok(embedded) => Ok(embedded),
+            Ok(embedded) => Ok(minifier::html::minify(&embedded)),
             Err(_) => Err(ErrorKind::Style),
         }
     }

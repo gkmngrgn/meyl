@@ -1,5 +1,6 @@
+use html2text::from_read as strip_tags;
 use inline_assets::{inline_html_string, Config as InlinerConfig};
-use minifier;
+use minifier::html::minify as minify_html;
 use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -91,13 +92,13 @@ impl Email {
     }
 
     fn strip_tags(&mut self, text: &str) -> Result<String, ErrorKind> {
-        // TODO: we need to prepare a new function to strip html tags from body.
-        Ok(text.to_string())
+        let stripped = strip_tags(text.as_bytes(), constants::TEXT_WIDTH);
+        Ok(stripped)
     }
 
     fn embed_styles(&mut self, text: &str) -> Result<String, ErrorKind> {
         match inline_html_string(text, &self.src_dir, InlinerConfig::default()) {
-            Ok(embedded) => Ok(minifier::html::minify(&embedded)),
+            Ok(embedded) => Ok(minify_html(&embedded)),
             Err(_) => Err(ErrorKind::Style),
         }
     }

@@ -71,6 +71,7 @@ auto-generate it for making your emails more accessible for all human being.
       programmatically.
 - [ ] digest css styles to html inside.
 - [ ] support to embed markdown files to the email body as a variable.
+- [ ] test rendered outputs.
 - [x] change Email struct parameters: src_dir, dst_dir, template_name.
 - [x] minify rendered outputs.
 - [x] make css styles inline for html templates.

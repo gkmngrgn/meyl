@@ -11,5 +11,5 @@ minifier = { version = "0.0.36", features = ["html"] }
 structopt = "0.3.14"
 tera = "1.2.0"
 
-[dev-dependencies]
-cargo-tarpaulin = "0.12.4"
+# [dev-dependencies]
+# cargo-tarpaulin = "0.12.4"  # it doesn't support windows.

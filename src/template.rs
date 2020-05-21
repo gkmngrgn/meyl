@@ -28,8 +28,15 @@ struct Email {
 
 impl Email {
     fn new(src_dir: PathBuf, dst_dir: PathBuf, template_name: String) -> Result<Self, ErrorKind> {
-        let template_dir = src_dir.join("**").join("*.html");
-        match Tera::new(template_dir.to_str().unwrap()) {
+        let template_path = format!(
+            "{}/**/*.html",
+            src_dir
+                .iter()
+                .map(|p| p.to_str().unwrap())
+                .collect::<Vec<&str>>()
+                .join("/")
+        );
+        match Tera::new(&template_path) {
             Ok(template) => {
                 let email = Self {
                     template,

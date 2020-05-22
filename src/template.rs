@@ -15,19 +15,23 @@ pub enum ErrorKind {
     DirectoryAccess,
 }
 
-struct Email {
+pub struct Email {
     template: Tera,
     template_name: String,
     src_dir: PathBuf,
     dst_dir: PathBuf,
     context_data: Context,
-    subject: String,
-    body: String,
-    body_text: String,
+    pub subject: String,
+    pub body: String,
+    pub body_text: String,
 }
 
 impl Email {
-    fn new(src_dir: PathBuf, dst_dir: PathBuf, template_name: String) -> Result<Self, ErrorKind> {
+    pub fn new(
+        src_dir: PathBuf,
+        dst_dir: PathBuf,
+        template_name: String,
+    ) -> Result<Self, ErrorKind> {
         let template_path = format!(
             "{}/**/*.html",
             src_dir
@@ -73,7 +77,7 @@ impl Email {
         }
     }
 
-    fn render_template(&mut self) -> Result<(), ErrorKind> {
+    pub fn render_template(&mut self) -> Result<(), ErrorKind> {
         self.subject = self.render(constants::FILE_SUBJECT, false)?;
         self.add_context_data(constants::VAR_SUBJECT, self.subject.clone().as_str());
         self.body = self.render(constants::FILE_BODY, true)?;
@@ -99,8 +103,16 @@ impl Email {
     }
 
     fn strip_tags(&mut self, text: &str) -> Result<String, ErrorKind> {
+        // TODO: is it possible to trim unwanted chars from `html2text`?
         let stripped = strip_tags(text.as_bytes(), constants::TEXT_WIDTH);
-        Ok(stripped)
+        let trimmed: &[_] = &['─', '\n'];
+        let normalized = stripped
+            .trim_matches(trimmed)
+            .split('\n')
+            .map(|l| l.trim_end().to_string())
+            .collect::<Vec<String>>()
+            .join("\n");
+        Ok(normalized)
     }
 
     fn embed_styles(&mut self, text: &str) -> Result<String, ErrorKind> {

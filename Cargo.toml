@@ -8,8 +8,10 @@ edition = "2018"
 html2text = "0.1.11"
 inline_assets = "0.4.1"
 minifier = { version = "0.0.36", features = ["html"] }
+serde_derive = "1.0.110"
 structopt = "0.3.14"
 tera = "1.2.0"
+toml = "0.5.6"
 
 # [dev-dependencies]
 # cargo-tarpaulin = "0.12.4"  # it doesn't support windows.

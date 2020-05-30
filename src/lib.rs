@@ -1,3 +1,4 @@
+pub mod config;
 pub mod constants;
 pub mod template;
 
@@ -20,7 +21,15 @@ pub fn find_all_templates(template_dir: PathBuf) -> std::io::Result<Vec<String>>
         if !is_valid_template_dir(&template_dir) {
             continue;
         }
-        template_dirs.push(template_dir.iter().last().unwrap().to_str().unwrap().to_string());
+        template_dirs.push(
+            template_dir
+                .iter()
+                .last()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string(),
+        );
     }
     Ok(template_dirs)
 }

@@ -991,6 +991,7 @@ dependencies = [
  "html2text",
  "inline_assets",
  "minifier",
+ "serde 1.0.110",
  "serde_derive",
  "structopt",
  "tera",

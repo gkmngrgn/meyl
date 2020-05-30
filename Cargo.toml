@@ -8,6 +8,7 @@ edition = "2018"
 html2text = "0.1.11"
 inline_assets = "0.4.1"
 minifier = { version = "0.0.36", features = ["html"] }
+serde = "1.0.110"
 serde_derive = "1.0.110"
 structopt = "0.3.14"
 tera = "1.2.0"

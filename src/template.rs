@@ -5,7 +5,8 @@ use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
 
-use crate::{constants, find_all_templates};
+use crate::{config, constants, find_all_templates};
+use config::get_context_data;
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -42,12 +43,13 @@ impl Email {
         );
         match Tera::new(&template_path) {
             Ok(template) => {
+                let template_dir = src_dir.join(&template_name);
                 let email = Self {
                     template,
                     template_name,
                     src_dir,
                     dst_dir,
-                    context_data: Context::new(),
+                    context_data: get_context_data(template_dir),
                     subject: "".to_string(),
                     body: "".to_string(),
                     body_text: "".to_string(),

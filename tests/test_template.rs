@@ -49,7 +49,7 @@ fn test_text() {
         "Los Angeles, California",
         "",
         "If you need an accessibility support, please reply this mail or call our number",
-        "and tell us what you need. We want to\nsee you among us.",
+        "and tell us what you need. We want to see you among us.",
     ]);
     assert_eq!(email.body_text, expected_text);
 }

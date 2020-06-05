@@ -42,7 +42,12 @@ impl Email {
                 .join("/")
         );
         match Tera::new(&template_path) {
-            Ok(template) => {
+            Ok(mut template) => {
+                // tera settings
+                template.autoescape_on(vec![constants::FILE_BODY]);
+                // TODO: register tera filters here.
+
+                // template struct
                 let template_dir = src_dir.join(&template_name);
                 let email = Self {
                     template,
@@ -71,6 +76,9 @@ impl Email {
                 rendered = if is_html {
                     self.embed_styles(&rendered)?
                 } else {
+                    rendered = rendered
+                        .replace("\n\n\n", "<br/><br/>")
+                        .replace("\n\n", "<br/>");
                     self.strip_tags(&rendered)?
                 };
                 Ok(rendered)
@@ -80,19 +88,17 @@ impl Email {
     }
 
     pub fn render_template(&mut self) -> Result<(), ErrorKind> {
+        // subject
         self.subject = self.render(constants::FILE_SUBJECT, false)?;
+
+        // body
         self.add_context_data(constants::VAR_SUBJECT, self.subject.clone().as_str());
         self.body = self.render(constants::FILE_BODY, true)?;
-        self.body_text = if self
-            .src_dir
-            .join(&self.template_name)
-            .join(constants::FILE_BODY_TEXT)
-            .exists()
-        {
-            self.render(constants::FILE_BODY_TEXT, false)?
-        } else {
-            self.strip_tags(self.body.clone().as_str())?
-        };
+
+        // text
+        self.body_text = self
+            .render(constants::FILE_BODY_TEXT, false)
+            .unwrap_or(self.strip_tags(self.body.clone().as_str())?);
         Ok(())
     }
 

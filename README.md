@@ -66,11 +66,12 @@ auto-generate it for making your emails more accessible for all human being.
 
 ## TO DO
 
+- [ ] auto-generate executable files every release (linux, bsd, win, mac).
 - [ ] multilanguage support.
-- [x] allow only BODY content in html files, we can add HTML and HEAD parts
-      programmatically.
 - [ ] digest css styles to html inside.
 - [ ] support to embed markdown files to the email body as a variable.
+- [x] allow only BODY content in html files, we can add HTML and HEAD parts
+      programmatically.
 - [x] test rendered outputs.
 - [x] change Email struct parameters: src_dir, dst_dir, template_name.
 - [x] minify rendered outputs.

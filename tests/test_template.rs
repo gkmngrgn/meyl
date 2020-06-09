@@ -3,64 +3,104 @@ mod seg_tests;
 use seg::{constants, template};
 use seg_tests::{get_random_test_dir, get_test_dir};
 
-fn merge_string_lines(lines: &[&str]) -> String {
-    lines
-        .iter()
-        .map(|l| l.to_string())
+fn normalize_text(text: &str) -> String {
+    text.trim_matches(|c| c == '\n' || c == ' ')
+        .split("\n")
+        .map(|l| l.trim_start().to_string())
         .collect::<Vec<String>>()
         .join("\n")
 }
 
-fn get_email(template_name: &str, test_name: &str) -> template::Email {
-    let src_dir = get_test_dir(vec!["examples", "src"]);
+fn normalize_html(body: &str) -> String {
+    body.trim_matches(|c| c == '\n' || c == ' ')
+        .split("\n")
+        .map(|l| l.trim_start().to_string())
+        .collect::<Vec<String>>()
+        .join(" ")
+}
+
+fn get_email(src_name: &str, template_name: &str, test_name: &str) -> template::Email {
+    let src_dir = get_test_dir(vec!["examples", src_name]);
     let dst_dir = get_random_test_dir(vec!["examples"], test_name);
     let mut email = template::Email::new(src_dir, dst_dir, template_name.to_string()).unwrap();
-    email.render_template().unwrap();
+    email.render_all().unwrap();
     email
 }
 
 #[test]
 fn generate_all_templates() {
-    let src_dir = get_test_dir(vec!["examples", "src"]);
-    let dst_dir = get_random_test_dir(vec!["examples"], "generate_all_templates");
-    let result = template::generate_all_templates(src_dir, dst_dir);
-    assert!(result.is_ok());
+    let src_dirs = &["src", "src-simple"];
+    src_dirs.iter().for_each(|dir_name| {
+        let src_dir = get_test_dir(vec!["examples", dir_name]);
+        let dst_dir = get_random_test_dir(vec!["examples"], "generate_all_templates-1");
+        let result = template::generate_all_templates(src_dir, dst_dir);
+        assert!(result.is_ok());
+    });
 }
 
 #[test]
 fn test_subject() {
-    let email = get_email("wedding-invitation", "test_subject");
+    let email = get_email("src", "wedding-invitation", "test_subject");
     let expected_subject = "You're invited to the wedding Ayşe Özbükeyoğlu & Mehmet Kırmızıkalem";
     assert_eq!(email.subject, expected_subject);
 }
 
 #[test]
 fn test_text() {
-    let email = get_email("wedding-invitation", "test_text");
-    let expected_text = merge_string_lines(&[
-        "Ayşe Özbükeyoğlu & Mehmet Kırmızıkalem invite you to join them at the",
-        "celebration of their wedding.",
-        "",
-        "Saturday, the fifth of November, two thousand twenty at past seven o'clock in",
-        "the evening.",
-        "",
-        "Our lady of lourdes church",
-        "2167 Sparrow Street",
-        "Los Angeles, California",
-        "",
-        "If you need an accessibility support, please reply this mail or call our number",
-        "and tell us what you need. We want to see you among us.",
-    ]);
+    let email = get_email("src", "wedding-invitation", "test_text");
+    let expected_text = normalize_text(
+        r###"
+            Ayşe Özbükeyoğlu & Mehmet Kırmızıkalem invite you to join them at the
+            celebration of their wedding.
+
+            Saturday, the fifth of November, two thousand twenty at past seven o'clock in
+            the evening.
+
+            Our lady of lourdes church
+            2167 Sparrow Street
+            Los Angeles, California
+
+            If you need an accessibility support, please reply this mail or call our number
+            and tell us what you need. We want to see you among us.
+    "###,
+    );
     assert_eq!(email.body_text, expected_text);
 }
 
-// TODO: comment out this test after you completed inline-css task.
-// #[test]
-// fn test_body() {
-//     let email = get_email("wedding-invitation", "test_body");
-//     let expected_subject = "";
-//     assert_eq!(email.subject, expected_subject);
-// }
+#[test]
+fn test_body() {
+    let email = get_email("src-simple", "new-article", "test_body");
+    let expected_body = normalize_html(
+        r###"
+            <!DOCTYPE html>
+            <html xmlns="http://www.w3.org/1999/xhtml">
+                <head>
+                    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+                    <meta content="width=device-width" name="viewport">
+                    <title>A new article was published!</title>
+                </head>
+                <body>
+                    <h1>Hello followers</h1>
+                    <blockquote>
+                        Lorem ipsum dolor sit amet, consectetur adipiscing
+                        elit. Phasellus in diam diam. Nunc faucibus egestas
+                        nisl, et fringilla ex tristique nec. Morbi nisl magna,
+                        blandit sit amet congue in, iaculis at massa. Sed
+                        placerat sapien at quam dignissim elementum. Donec est
+                        massa, vestibulum eget porttitor in, porttitor eget
+                        tortor. Nullam pharetra quam in eleifend
+                        tempus. Vestibulum varius condimentum tortor ac mattis.
+                    </blockquote>
+                    <p>
+                        Happy hacking,<br>
+                        Yamamura
+                    </p>
+                </body>
+            </html>
+        "###,
+    );
+    assert_eq!(email.body, expected_body);
+}
 
 #[test]
 fn test_text_without_template() {
@@ -69,11 +109,21 @@ fn test_text_without_template() {
         .join(constants::FILE_BODY_TEXT)
         .exists());
 
-    let email = get_email("payroll", "test_text_without_template");
-    let expected_body_text = merge_string_lines(&[
-        "I'll update this template later.",
-        "",
-        "I want to check if the tags are stripped correctly.",
-    ]);
+    let email = get_email("src", "payroll", "test_text_without_template");
+    let expected_body_text = normalize_text(
+        r###"
+            # Dear John Doe,
+
+            I've added you as an accountant in our office organization. Just click on the
+            button below and you will gain instant access to our account.
+
+            [ Accept invitation ][1]
+
+            Regards,
+            HANKA Precision Instruments
+
+            [1] http://localhost/invitation-link/
+        "###,
+    );
     assert_eq!(email.body_text, expected_body_text);
 }

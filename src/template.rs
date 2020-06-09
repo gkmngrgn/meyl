@@ -1,6 +1,6 @@
-use html2text::from_read as strip_tags;
+use html2text;
 use inline_assets::{inline_html_string, Config as InlinerConfig};
-use minifier::html::minify as minify_html;
+use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -14,6 +14,64 @@ pub enum ErrorKind {
     MissingContext,
     InvalidDirectory,
     DirectoryAccess,
+}
+
+pub struct HTMLBody {
+    rendered_body: String,
+    src_dir: PathBuf,
+}
+
+impl HTMLBody {
+    fn new(src_dir: PathBuf) -> Self {
+        Self {
+            rendered_body: String::new(),
+            src_dir,
+        }
+    }
+
+    fn get_head(&self, subject: &str) -> String {
+        let mut head_items = vec![format!("<title>{}</title>", subject)];
+        if self.src_dir.join(constants::FILE_STYLE).exists() {
+            head_items.push(format!(
+                "<link rel=\"stylesheet\" href=\"{}\" />",
+                constants::FILE_STYLE
+            ));
+        }
+        head_items.join("")
+    }
+
+    fn render_html(&mut self, subject: &str, body: &str) -> Result<(), ErrorKind> {
+        let html_template = r###"
+            <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+            <html xmlns="http://www.w3.org/1999/xhtml">
+                <head>
+                    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+                    <meta name="viewport" content="width=device-width" />
+                    {{ HEAD }}
+                </head>
+                <body>
+                    {{ BODY }}
+                </body>
+            </html>
+        "###;
+        let html_rendered = html_template
+            .replace("{{ BODY }}", body)
+            .replace("{{ HEAD }}", &self.get_head(subject));
+        match inline_html_string(&html_rendered, &self.src_dir, InlinerConfig::default()) {
+            Ok(mut embedded) => {
+                embedded = embedded
+                    .trim_matches(|c| c == '\n' || c == ' ')
+                    .split("\n")
+                    .map(|l| l.trim_start().to_string())
+                    .collect::<Vec<String>>()
+                    .join(" ");
+                let re = Regex::new(r"(> {0,}<)").unwrap();
+                self.rendered_body = re.replace_all(&embedded, "> <").to_string();
+                Ok(())
+            }
+            Err(_) => Err(ErrorKind::Style),
+        }
+    }
 }
 
 pub struct Email {
@@ -65,39 +123,36 @@ impl Email {
         }
     }
 
-    fn add_context_data(&mut self, name: &str, value: &str) {
-        self.context_data.insert(name, value);
-    }
-
-    fn render(&mut self, file_name: &str, is_html: bool) -> Result<String, ErrorKind> {
+    fn render_text(&mut self, file_name: &str) -> Result<String, ErrorKind> {
         let template_name = format!("{}/{}", self.template_name, file_name);
         match self.template.render(&template_name, &self.context_data) {
             Ok(mut rendered) => {
-                rendered = if is_html {
-                    self.embed_styles(&rendered)?
-                } else {
-                    rendered = rendered
-                        .replace("\n\n\n", "<br/><br/>")
-                        .replace("\n\n", "<br/>");
-                    self.strip_tags(&rendered)?
-                };
-                Ok(rendered)
+                rendered = rendered
+                    .replace("\n\n\n", "<br/><br/>")
+                    .replace("\n\n", "<br/>");
+                self.strip_tags(&rendered)
             }
             Err(_) => Err(ErrorKind::MissingContext),
         }
     }
 
-    pub fn render_template(&mut self) -> Result<(), ErrorKind> {
-        // subject
-        self.subject = self.render(constants::FILE_SUBJECT, false)?;
+    fn render_html(&mut self, subject: &str, file_name: &str) -> Result<String, ErrorKind> {
+        let template_name = format!("{}/{}", self.template_name, file_name);
+        match self.template.render(&template_name, &self.context_data) {
+            Ok(rendered) => {
+                let mut html_body = HTMLBody::new(self.src_dir.clone());
+                html_body.render_html(subject, &rendered)?;
+                Ok(html_body.rendered_body)
+            }
+            Err(_) => Err(ErrorKind::MissingContext),
+        }
+    }
 
-        // body
-        self.add_context_data(constants::VAR_SUBJECT, self.subject.clone().as_str());
-        self.body = self.render(constants::FILE_BODY, true)?;
-
-        // text
+    pub fn render_all(&mut self) -> Result<(), ErrorKind> {
+        self.subject = self.render_text(constants::FILE_SUBJECT)?;
+        self.body = self.render_html(&self.subject.clone(), constants::FILE_BODY)?;
         self.body_text = self
-            .render(constants::FILE_BODY_TEXT, false)
+            .render_text(constants::FILE_BODY_TEXT)
             .unwrap_or(self.strip_tags(self.body.clone().as_str())?);
         Ok(())
     }
@@ -112,7 +167,7 @@ impl Email {
 
     fn strip_tags(&mut self, text: &str) -> Result<String, ErrorKind> {
         // TODO: is it possible to trim unwanted chars from `html2text`?
-        let stripped = strip_tags(text.as_bytes(), constants::TEXT_WIDTH);
+        let stripped = html2text::from_read(text.as_bytes(), constants::TEXT_WIDTH);
         let trimmed: &[_] = &['─', '\n'];
         let normalized = stripped
             .trim_matches(trimmed)
@@ -121,13 +176,6 @@ impl Email {
             .collect::<Vec<String>>()
             .join("\n");
         Ok(normalized)
-    }
-
-    fn embed_styles(&mut self, text: &str) -> Result<String, ErrorKind> {
-        match inline_html_string(text, &self.src_dir, InlinerConfig::default()) {
-            Ok(embedded) => Ok(minify_html(&embedded)),
-            Err(_) => Err(ErrorKind::Style),
-        }
     }
 }
 
@@ -142,7 +190,7 @@ pub fn generate_all_templates(src_dir: PathBuf, dst_dir: PathBuf) -> Result<(), 
                 // TODO: do we need to clone these paths?
                 let mut email =
                     Email::new(src_dir.clone(), dst_dir.clone(), template_name.clone())?;
-                email.render_template()?;
+                email.render_all()?;
                 if let Err(_) = email.save_rendered_outputs() {
                     return Err(ErrorKind::DirectoryAccess);
                 }

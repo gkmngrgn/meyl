@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 
 {% block body %}
-    <p>I'll update this template later.</p>
-    <p>I want to check if the tags are stripped correctly.</p>
+    <h1>Dear {{ employee.first_name }} {{ employee.last_name }},</h1>
+
+    <p>
+        I've added you as an accountant in our office organization.
+        Just click on the button below and you will gain instant access to our account.
+    </p>
+
+    <div class="button">
+        <a href="http://localhost/invitation-link/">
+            Accept invitation
+        </a>
+    </div>
+
+    <p>
+        Regards,<br/>
+        HANKA Precision Instruments
+    </p>
 {% endblock %}

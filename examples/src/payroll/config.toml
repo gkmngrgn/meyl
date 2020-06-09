@@ -1,0 +1,5 @@
+[context_data]
+employee.first_name = "John"
+employee.last_name = "Doe"
+month = "January"
+year = "2020"

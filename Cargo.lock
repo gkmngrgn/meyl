@@ -555,6 +555,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400"
 
 [[package]]
+name = "meyl"
+version = "0.1.0"
+dependencies = [
+ "html2text",
+ "inline_assets",
+ "regex",
+ "serde 1.0.110",
+ "serde_derive",
+ "structopt",
+ "tera",
+ "toml",
+]
+
+[[package]]
 name = "new_debug_unreachable"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -966,20 +980,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
-]
-
-[[package]]
-name = "seg"
-version = "0.1.0"
-dependencies = [
- "html2text",
- "inline_assets",
- "regex",
- "serde 1.0.110",
- "serde_derive",
- "structopt",
- "tera",
- "toml",
 ]
 
 [[package]]

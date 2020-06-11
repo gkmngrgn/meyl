@@ -1,5 +1,5 @@
 [package]
-name = "seg"
+name = "meyl"
 version = "0.1.0"
 authors = ["Gökmen Görgen <gkmngrgn@gmail.com>"]
 edition = "2018"
@@ -13,6 +13,3 @@ serde_derive = "1.0.110"
 structopt = "0.3.14"
 tera = "1.2.0"
 toml = "0.5.6"
-
-# [dev-dependencies]
-# cargo-tarpaulin = "0.12.4"  # it doesn't support windows.

@@ -1,7 +1,7 @@
-mod seg_tests;
+mod meyl_tests;
 
-use seg::{constants, template};
-use seg_tests::{get_random_test_dir, get_test_dir};
+use meyl::{constants, template};
+use meyl_tests::{get_random_test_dir, get_test_dir};
 
 fn normalize_text(text: &str) -> String {
     text.trim_matches(|c| c == '\n' || c == ' ')

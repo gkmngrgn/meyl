@@ -1,10 +1,10 @@
-use seg;
-use seg::template::{generate_all_templates, ErrorKind};
+use meyl;
+use meyl::template::{generate_all_templates, ErrorKind};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
-#[structopt(name = "seg")]
+#[structopt(name = "meyl")]
 struct Opt {
     #[structopt(subcommand)]
     cmd: Sub,

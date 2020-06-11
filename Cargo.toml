@@ -1,6 +1,8 @@
 [package]
 name = "meyl"
 version = "0.1.0"
+description = "Static Email (Template) Generator"
+license = "MIT"
 authors = ["Gökmen Görgen <gkmngrgn@gmail.com>"]
 edition = "2018"
 

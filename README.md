@@ -1,5 +1,7 @@
 # Static Email (Template) Generator
 
+[![codecov](https://codecov.io/gh/gkmngrgn/meyl/branch/master/graph/badge.svg)](https://codecov.io/gh/gkmngrgn/meyl)
+
 MEYL is a **developer-first** and **accessibility-first** email generator app. I
 write this app to create, edit, test, and manage all emails using a template
 engine. You can use it for generating single emails or you can create reusable

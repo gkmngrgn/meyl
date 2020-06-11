@@ -31,5 +31,6 @@ pub fn find_all_templates(template_dir: PathBuf) -> std::io::Result<Vec<String>>
                 .to_string(),
         );
     }
+    template_dirs.sort();
     Ok(template_dirs)
 }

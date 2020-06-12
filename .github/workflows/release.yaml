@@ -32,51 +32,30 @@ jobs:
 
             - name: Get the binary path (linux & macos)
               if: matrix.os != 'windows-latest'
-              run: echo "::set-env name=MEYL_BIN::target/release/meyl"
+              run: echo "::set-env name=MEYL_BIN::meyl"
 
             - name: Get the binary path (windows)
               if: matrix.os == 'windows-latest'
-              run: echo "::set-env name=MEYL_BIN::target/release/meyl.exe"
+              run: echo "::set-env name=MEYL_BIN::meyl.exe"
 
             - name: Build release binary
               run: cargo build --verbose --release
 
             - name: Strip release binary
               if: matrix.os != 'windows-latest'
-              run: strip ${{ env.MEYL_BIN }}
+              run: strip target/release/${{ env.MEYL_BIN }}
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v1
               with:
                   name: dist-${{ matrix.os }}
-                  path: ${{ env.MEYL_BIN }}
+                  path: target/release/${{ env.MEYL_BIN }}
 
-    publish:
-        name: publish
+    release:
+        name: release
         runs-on: ubuntu-latest
         needs: ["dist"]
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
-
-            - uses: actions/download-artifact@v1
-              with:
-                  name: dist-ubuntu-latest
-                  path: dist
-
-            - name: Get release download URL
-              uses: actions/download-artifact@v1
-              with:
-                  name: dist-windows-latest
-                  path: dist
-
-            - uses: actions/download-artifact@v1
-              with:
-                  name: dist-macos-latest
-                  path: dist
-
-            - run: ls -all ./dist
-
             - name: Get the release version from the tag
               run: echo "::set-env name=MEYL_VERSION::${GITHUB_REF#refs/tags/}"
 
@@ -91,12 +70,30 @@ jobs:
                   draft: false
                   prerelease: false
 
+    publish:
+        name: publish
+        runs-on: ubuntu-latest
+        needs: ["dist", "release"]
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest]
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v2
+
+            - name: Download artifact
+              uses: actions/download-artifact@v1
+              with:
+                  name: dist-${{ matrix.os }}
+                  path: dist
+
             - name: Upload articats
               uses: actions/upload-release-asset@v1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ${{ env.MEYL_BIN }}
+                  upload_url: ${{ jobs.release.steps.create_release.outputs.upload_url }}
+                  asset_path: ./dist/${{ env.MEYL_BIN }}
                   asset_name: ${{ env.MEYL_BIN }}
                   asset_content_type: application/octet-stream

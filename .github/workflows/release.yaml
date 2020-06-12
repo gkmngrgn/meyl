@@ -44,7 +44,7 @@ jobs:
                   if [ "${{ matrix.os }}" = "windows-latest" ]; then
                       mkdir archive
                       cp target/release/${{ env.APP_NAME }}.exe README.md archive/
-                      7z a archive.zip archive
+                      7z a archive.zip archive/*
                   else
                       zip --junk-paths archive target/release/${{ env.APP_NAME }} README.md
                   fi
@@ -52,7 +52,7 @@ jobs:
             - name: Upload artifacts
               uses: actions/upload-artifact@v1
               with:
-                  name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
+                  name: ${{ env.APP_NAME }}-${{ matrix.os }}
                   path: archive.zip
 
     release:
@@ -92,7 +92,7 @@ jobs:
             - name: Download artifact
               uses: actions/download-artifact@v1
               with:
-                  name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
+                  name: ${{ env.APP_NAME }}-${{ matrix.os }}
                   path: dist
 
             - run: ls --all ./dist/
@@ -103,6 +103,6 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   upload_url: ${{ needs.release.outputs.upload_url }}
-                  asset_path: ./dist/${{ env.APP_NAME }}-${{ matrix.os }}.zip
+                  asset_path: ./dist/archive.zip
                   asset_name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
                   asset_content_type: application/zip

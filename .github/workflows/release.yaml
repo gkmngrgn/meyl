@@ -17,8 +17,7 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                # os: [ubuntu-latest, windows-latest, macos-latest]
-                os: [macos-latest]
+                os: [ubuntu-latest, windows-latest, macos-latest]
 
         steps:
             - name: Checkout repository
@@ -31,39 +30,32 @@ jobs:
                   profile: minimal
                   override: true
 
+            - name: Get the binary path (linux & macos)
+              if: matrix.os != 'windows-latest'
+              run: echo "::set-env name=MEYL_BIN::target/release/meyl"
+
+            - name: Get the binary path (windows)
+              if: matrix.os == 'windows-latest'
+              run: echo "::set-env name=MEYL_BIN::target/release/meyl.exe"
+
             - name: Build release binary
               run: cargo build --verbose --release
 
             - name: Strip release binary
               if: matrix.os != 'windows-latest'
-              run: strip "target/release/meyl"
-
-            - run: ls -all .
+              run: strip ${{ env.MEYL_BIN }}
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v1
               with:
                   name: dist-${{ matrix.os }}
-                  path: .
+                  path: ${{ env.MEYL_BIN }}
 
     publish:
         name: publish
         runs-on: ubuntu-latest
         needs: ["dist"]
         steps:
-            - name: Get the release version from the tag
-              run: |
-                  echo "::set-env name=MEYL_VERSION::${GITHUB_REF#refs/tags/}"
-                  echo "version is: ${{ env.MEYL_VERSION }}"
-
-            - name: Get the binary path (windows)
-              if: matrix.os == 'windows-latest'
-              run: echo "::set-env name=MEYL_BIN::target/release/meyl.exe"
-
-            - name: Get the binary path (linux & macos)
-              if: matrix.os != 'windows-latest'
-              run: echo "::set-env name=MEYL_BIN::target/release/meyl"
-
             - name: Checkout repository
               uses: actions/checkout@v2
 
@@ -85,6 +77,9 @@ jobs:
 
             - run: ls -all ./dist
 
+            - name: Get the release version from the tag
+              run: echo "::set-env name=MEYL_VERSION::${GITHUB_REF#refs/tags/}"
+
             - name: Create release
               id: create_release
               uses: actions/create-release@v1
@@ -96,7 +91,7 @@ jobs:
                   draft: false
                   prerelease: false
 
-            - name: Upload release archive
+            - name: Upload articats
               uses: actions/upload-release-asset@v1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

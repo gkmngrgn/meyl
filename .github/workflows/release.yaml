@@ -44,7 +44,7 @@ jobs:
                   if [ "${{ matrix.os }}" = "windows-latest" ]; then
                       mkdir archive
                       cp target/release/${{ env.APP_NAME }}.exe README.md archive/
-                      7z a archive.zip archive/*
+                      7z a archive.zip ./archive/*
                   else
                       zip --junk-paths archive target/release/${{ env.APP_NAME }} README.md
                   fi
@@ -95,7 +95,8 @@ jobs:
                   name: ${{ env.APP_NAME }}-${{ matrix.os }}
                   path: dist
 
-            - run: ls --all ./dist/
+            - name: Get the release version from the tag
+              run: echo "::set-env name=APP_VERSION::${GITHUB_REF#refs/tags/}"
 
             - name: Upload articats
               uses: actions/upload-release-asset@v1
@@ -104,5 +105,5 @@ jobs:
               with:
                   upload_url: ${{ needs.release.outputs.upload_url }}
                   asset_path: ./dist/archive.zip
-                  asset_name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
+                  asset_name: ${{ env.APP_NAME }}-${{ matrix.os }}-${{ env.APP_VERSION }}.zip
                   asset_content_type: application/zip

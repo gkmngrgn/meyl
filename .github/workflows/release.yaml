@@ -17,7 +17,8 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest]
+                # os: [ubuntu-latest, windows-latest, macos-latest]
+                os: [macos-latest]
 
         steps:
             - name: Checkout repository
@@ -33,15 +34,17 @@ jobs:
             - name: Build release binary
               run: cargo build --verbose --release
 
-            - name: Strip release binary (linux and macos)
-              if: matrix.os != 'wındows-latest'
+            - name: Strip release binary
+              if: matrix.os != 'windows-latest'
               run: strip "target/release/meyl"
+
+            - run: ls -all .
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v1
               with:
                   name: dist-${{ matrix.os }}
-                  path: ./dist
+                  path: .
 
     publish:
         name: publish
@@ -51,7 +54,6 @@ jobs:
             - name: Get the release version from the tag
               run: |
                   echo "::set-env name=MEYL_VERSION::${GITHUB_REF#refs/tags/}"
-                  echo "::set-env name=MEYL_BIN::target/release/meyl"
                   echo "version is: ${{ env.MEYL_VERSION }}"
 
             - name: Get the binary path (windows)
@@ -79,7 +81,7 @@ jobs:
             - uses: actions/download-artifact@v1
               with:
                   name: dist-macos-latest
-                  path: dits
+                  path: dist
 
             - run: ls -all ./dist
 

@@ -70,6 +70,9 @@ jobs:
                   draft: false
                   prerelease: false
 
+        outputs:
+            upload_url: ${{ steps.create_release.outputs.upload_url }}
+
     publish:
         name: publish
         runs-on: ubuntu-latest
@@ -93,7 +96,7 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                  upload_url: ${{ jobs.release.steps.create_release.outputs.upload_url }}
+                  upload_url: ${{ needs.release.outputs.upload_url }}
                   asset_path: ./dist/${{ env.MEYL_BIN }}
                   asset_name: ${{ env.MEYL_BIN }}
                   asset_content_type: application/octet-stream

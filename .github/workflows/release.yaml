@@ -10,6 +10,7 @@ env:
     CARGO_NET_RETRY: 10
     RUSTFLAGS: -D warnings
     RUSTUP_MAX_RETRIES: 10
+    APP_NAME: meyl
 
 jobs:
     dist:
@@ -30,26 +31,29 @@ jobs:
                   profile: minimal
                   override: true
 
-            - name: Get the binary path (linux & macos)
-              if: matrix.os != 'windows-latest'
-              run: echo "::set-env name=MEYL_BIN::meyl"
-
-            - name: Get the binary path (windows)
-              if: matrix.os == 'windows-latest'
-              run: echo "::set-env name=MEYL_BIN::meyl.exe"
-
             - name: Build release binary
               run: cargo build --verbose --release
 
             - name: Strip release binary
               if: matrix.os != 'windows-latest'
-              run: strip target/release/${{ env.MEYL_BIN }}
+              run: strip target/release/${{ env.APP_NAME }}
+
+            - name: Create archive
+              shell: bash
+              run: |
+                  if [ "${{ matrix.os }}" = "windows-latest" ]; then
+                      mkdir archive
+                      cp target/release/${{ env.APP_NAME }}.exe README.md archive/
+                      7z a archive.zip archive
+                  else
+                      zip --junk-paths archive target/release/${{ env.APP_NAME }} README.md
+                  fi
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v1
               with:
-                  name: dist-${{ matrix.os }}
-                  path: target/release/${{ env.MEYL_BIN }}
+                  name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
+                  path: archive.zip
 
     release:
         name: release
@@ -57,7 +61,7 @@ jobs:
         needs: ["dist"]
         steps:
             - name: Get the release version from the tag
-              run: echo "::set-env name=MEYL_VERSION::${GITHUB_REF#refs/tags/}"
+              run: echo "::set-env name=APP_VERSION::${GITHUB_REF#refs/tags/}"
 
             - name: Create release
               id: create_release
@@ -65,8 +69,8 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                  tag_name: ${{ env.MEYL_VERSION }}
-                  release_name: ${{ env.MEYL_VERSION }}
+                  tag_name: ${{ env.APP_VERSION }}
+                  release_name: ${{ env.APP_VERSION }}
                   draft: false
                   prerelease: false
 
@@ -88,16 +92,8 @@ jobs:
             - name: Download artifact
               uses: actions/download-artifact@v1
               with:
-                  name: dist-${{ matrix.os }}
+                  name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
                   path: dist
-
-            - name: Get the binary path (linux & macos)
-              if: matrix.os != 'windows-latest'
-              run: echo "::set-env name=MEYL_BIN::meyl"
-
-            - name: Get the binary path (windows)
-              if: matrix.os == 'windows-latest'
-              run: echo "::set-env name=MEYL_BIN::meyl.exe"
 
             - run: ls --all ./dist/
 
@@ -107,6 +103,6 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   upload_url: ${{ needs.release.outputs.upload_url }}
-                  asset_path: ./dist/${{ env.MEYL_BIN }}
-                  asset_name: ${{ env.MEYL_BIN }}
-                  asset_content_type: application/octet-stream
+                  asset_path: ./dist/${{ env.APP_NAME }}-${{ matrix.os }}.zip
+                  asset_name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
+                  asset_content_type: application/zip

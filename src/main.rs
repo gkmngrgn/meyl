@@ -49,7 +49,6 @@ fn main() {
             source,
             destination,
         } => {
-            // TODO: the error messages should
             let msg = match generate_all_templates(source, destination) {
                 Ok(_) => "All templates are generated successfully.",
                 Err(e) => match e {

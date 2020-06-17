@@ -1,6 +1,7 @@
 use html2text;
 use inline_assets::{inline_html_string, Config as InlinerConfig};
 use regex::Regex;
+use std::env;
 use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -180,6 +181,8 @@ impl Email {
 }
 
 pub fn generate_all_templates(src_dir: PathBuf, dst_dir: PathBuf) -> Result<(), ErrorKind> {
+    let src_dir = env::current_dir().expect("CURDIR").join(&src_dir);
+    let dst_dir = env::current_dir().expect("CURDIR").join(&dst_dir);
     match find_all_templates(src_dir.clone()) {
         Ok(template_names) => {
             for template_name in template_names {

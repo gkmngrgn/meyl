@@ -14,8 +14,8 @@ users, but if you forget that somehow, MEYL will auto-generate it for you.
 
 ```
 # generate emails
-meyl generate --src=templates/src/ \
-             --dst=templates/dst/
+meyl generate --source=templates/src/ \
+             --destination=templates/dst/
 
 # send a test mail to preview
 meyl send --template=templates/dst/wedding-invitation/ \

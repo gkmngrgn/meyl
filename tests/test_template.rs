@@ -1,15 +1,8 @@
 mod meyl_tests;
 
+use indoc::indoc;
 use meyl::{constants, template};
 use meyl_tests::{get_random_test_dir, get_test_dir};
-
-fn normalize_text(text: &str) -> String {
-    text.trim_matches(|c| c == '\n' || c == ' ')
-        .split("\n")
-        .map(|l| l.trim_start().to_string())
-        .collect::<Vec<String>>()
-        .join("\n")
-}
 
 fn normalize_html(body: &str) -> String {
     body.trim_matches(|c| c == '\n' || c == ' ')
@@ -48,21 +41,21 @@ fn test_subject() {
 #[test]
 fn test_text() {
     let email = get_email("src", "wedding-invitation", "test_text");
-    let expected_text = normalize_text(
-        r###"
-            Ayşe Özbükeyoğlu & Mehmet Kırmızıkalem invite you to join them at the
-            celebration of their wedding.
+    let expected_text = indoc!(
+        r#"
+        Ayşe Özbükeyoğlu & Mehmet Kırmızıkalem invite you to join them at the
+        celebration of their wedding.
 
-            Saturday, the fifth of November, two thousand twenty at past seven o'clock in
-            the evening.
+        Saturday, the fifth of November, two thousand twenty at past seven o'clock in
+        the evening.
 
-            Our lady of lourdes church
-            2167 Sparrow Street
-            Los Angeles, California
+        Our lady of lourdes church
+        2167 Sparrow Street
+        Los Angeles, California
 
-            If you need an accessibility support, please reply this mail or call our number
-            and tell us what you need. We want to see you among us.
-    "###,
+        If you need an accessibility support, please reply this mail or call our number
+        and tell us what you need. We want to see you among us.
+        "#
     );
     assert_eq!(email.body_text, expected_text);
 }
@@ -71,33 +64,33 @@ fn test_text() {
 fn test_body() {
     let email = get_email("src-simple", "new-article", "test_body");
     let expected_body = normalize_html(
-        r###"
-            <!DOCTYPE html>
-            <html xmlns="http://www.w3.org/1999/xhtml">
-                <head>
-                    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-                    <meta content="width=device-width" name="viewport">
-                    <title>A new article was published!</title>
-                </head>
-                <body>
-                    <h1>Hello followers</h1>
-                    <blockquote>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing
-                        elit. Phasellus in diam diam. Nunc faucibus egestas
-                        nisl, et fringilla ex tristique nec. Morbi nisl magna,
-                        blandit sit amet congue in, iaculis at massa. Sed
-                        placerat sapien at quam dignissim elementum. Donec est
-                        massa, vestibulum eget porttitor in, porttitor eget
-                        tortor. Nullam pharetra quam in eleifend
-                        tempus. Vestibulum varius condimentum tortor ac mattis.
-                    </blockquote>
-                    <p>
-                        Happy hacking,<br>
-                        Yamamura
-                    </p>
-                </body>
-            </html>
-        "###,
+        r#"
+        <!DOCTYPE html>
+        <html xmlns="http://www.w3.org/1999/xhtml">
+            <head>
+                <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+                <meta content="width=device-width" name="viewport">
+                <title>A new article was published!</title>
+            </head>
+            <body>
+                <h1>Hello followers</h1>
+                <blockquote>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing
+                    elit. Phasellus in diam diam. Nunc faucibus egestas
+                    nisl, et fringilla ex tristique nec. Morbi nisl magna,
+                    blandit sit amet congue in, iaculis at massa. Sed
+                    placerat sapien at quam dignissim elementum. Donec est
+                    massa, vestibulum eget porttitor in, porttitor eget
+                    tortor. Nullam pharetra quam in eleifend
+                    tempus. Vestibulum varius condimentum tortor ac mattis.
+                </blockquote>
+                <p>
+                    Happy hacking,<br>
+                    Yamamura
+                </p>
+            </body>
+        </html>
+        "#,
     );
     assert_eq!(email.body, expected_body);
 }
@@ -110,20 +103,20 @@ fn test_text_without_template() {
         .exists());
 
     let email = get_email("src", "payroll", "test_text_without_template");
-    let expected_body_text = normalize_text(
-        r###"
-            # Dear John Doe,
+    let expected_body_text = indoc!(
+        r#"
+        # Dear John Doe,
 
-            I've added you as an accountant in our office organization. Just click on the
-            button below and you will gain instant access to our account.
+        I've added you as an accountant in our office organization. Just click on the
+        button below and you will gain instant access to our account.
 
-            [ Accept invitation ][1]
+        [ Accept invitation ][1]
 
-            Regards,
-            HANKA Precision Instruments
+        Regards,
+        HANKA Precision Instruments
 
-            [1] http://localhost/invitation-link/
-        "###,
+        [1] http://localhost/invitation-link/
+        "#
     );
     assert_eq!(email.body_text, expected_body_text);
 }

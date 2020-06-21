@@ -143,14 +143,14 @@ impl Email {
         }
     }
 
-    fn render_text(&mut self, file_name: &str) -> Result<String, ErrorKind> {
+    fn render_text(&mut self, file_name: &str, new_line: bool) -> Result<String, ErrorKind> {
         let template_name = format!("{}/{}", self.template_name, file_name);
         match self.template.render(&template_name, &self.context_data) {
             Ok(mut rendered) => {
                 rendered = rendered
                     .replace("\n\n\n", "<br/><br/>")
                     .replace("\n\n", "<br/>");
-                self.strip_tags(&rendered)
+                self.strip_tags(&rendered, new_line)
             }
             Err(e) => {
                 let msg = format!("{}", e);
@@ -175,11 +175,11 @@ impl Email {
     }
 
     pub fn render_all(&mut self) -> Result<(), ErrorKind> {
-        self.subject = self.render_text(constants::FILE_SUBJECT)?;
+        self.subject = self.render_text(constants::FILE_SUBJECT, false)?;
         self.body = self.render_html(&self.subject.clone(), constants::FILE_BODY)?;
         self.body_text = self
-            .render_text(constants::FILE_BODY_TEXT)
-            .unwrap_or(self.strip_tags(self.body.clone().as_str())?);
+            .render_text(constants::FILE_BODY_TEXT, true)
+            .unwrap_or(self.strip_tags(self.body.clone().as_str(), true)?);
         Ok(())
     }
 
@@ -191,7 +191,7 @@ impl Email {
         Ok(())
     }
 
-    fn strip_tags(&mut self, text: &str) -> Result<String, ErrorKind> {
+    fn strip_tags(&mut self, text: &str, new_line: bool) -> Result<String, ErrorKind> {
         // TODO: is it possible to trim unwanted chars from `html2text`?
         let stripped = html2text::from_read(text.as_bytes(), constants::TEXT_WIDTH);
         let trimmed: &[_] = &['─', '\n'];
@@ -201,7 +201,11 @@ impl Email {
             .map(|l| l.trim_end().to_string())
             .collect::<Vec<String>>()
             .join("\n");
-        Ok(normalized)
+        Ok(format!(
+            "{}{}",
+            normalized,
+            if new_line { "\n" } else { "" }
+        ))
     }
 }
 

@@ -1,3 +1,4 @@
+use indoc::indoc;
 use meyl;
 use meyl::constants;
 use meyl::template::{generate_all_templates, ErrorKind};
@@ -21,8 +22,7 @@ enum Sub {
     #[structopt(display_order = 1)]
     New {
         /// Email template directory
-        #[structopt(short, long)]
-        source: PathBuf,
+        project_dir: PathBuf,
     },
 
     /// Generates all available emails using [SOURCE] directory
@@ -80,11 +80,13 @@ fn create_new_directory(path: &PathBuf) -> Result<(), ErrorKind> {
     let path_style = &src_dir.join(constants::FILE_STYLE);
     required_files.insert(
         &path_style,
-        r#"
-        html {
-            background-color: #eee;
-        }
-        "#,
+        indoc!(
+            r#"
+            html {
+                background-color: #eee;
+            }
+            "#
+        ),
     );
 
     let path_base_html = &src_dir.join("base.html");
@@ -93,10 +95,12 @@ fn create_new_directory(path: &PathBuf) -> Result<(), ErrorKind> {
     let path_config = &example_dir.join(constants::FILE_CONFIG);
     required_files.insert(
         &path_config,
-        r#"
-        [context_data]
-        name = "Jane Smith"
-        "#,
+        indoc!(
+            r#"
+            [context_data]
+            name = "Jane Smith"
+            "#
+        ),
     );
 
     let path_subject = &example_dir.join(constants::FILE_SUBJECT);
@@ -105,25 +109,29 @@ fn create_new_directory(path: &PathBuf) -> Result<(), ErrorKind> {
     let path_body_text = &example_dir.join(constants::FILE_BODY_TEXT);
     required_files.insert(
         &path_body_text,
-        r#"
-        Dear {{ name }},
+        indoc!(
+            r#"
+            Dear {{ name }},
 
-        This is a test email template to show you the directory structure.
-        "#,
+            This is a test email template to show you the directory structure.
+            "#
+        ),
     );
 
     let path_body = &example_dir.join(constants::FILE_BODY);
     required_files.insert(
         &path_body,
-        r#"
-        {% extends "base.html" %}
+        indoc!(
+            r#"
+            {% extends "base.html" %}
 
-        {% block content %}
-            <h2>Dear {{ name }}<h2>
+            {% block content %}
+                <h2>Dear {{ name }}<h2>
 
-            <p>This is a test email template to show you the directory structure.</p>
-        {% endblock %}
-        "#,
+                <p>This is a test email template to show you the directory structure.</p>
+            {% endblock %}
+            "#
+        ),
     );
 
     for (file_path, content) in required_files {
@@ -136,10 +144,10 @@ fn create_new_directory(path: &PathBuf) -> Result<(), ErrorKind> {
 fn main() {
     let opt = Opt::from_args();
     match opt.cmd {
-        Sub::New { source } => match create_new_directory(&source) {
+        Sub::New { project_dir } => match create_new_directory(&project_dir) {
             Ok(_) => println!(
                 "Your new email template directory is created in {:?}",
-                source
+                project_dir
             ),
             Err(e) => eprintln!("{}", e),
         },

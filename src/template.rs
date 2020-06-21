@@ -2,6 +2,7 @@ use html2text;
 use inline_assets::{inline_html_string, Config as InlinerConfig};
 use regex::Regex;
 use std::env;
+use std::fmt;
 use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -11,10 +12,22 @@ use config::get_context_data;
 
 #[derive(Debug)]
 pub enum ErrorKind {
-    Style,
-    MissingContext,
-    InvalidDirectory,
-    DirectoryAccess,
+    Style(String),
+    MissingContext(String),
+    InvalidDirectory(String),
+    DirectoryAccess(String),
+}
+
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let msg = match self {
+            ErrorKind::Style(msg) => format!("Style error: {}", msg),
+            ErrorKind::MissingContext(msg) => format!("Context data error: {}", msg),
+            ErrorKind::InvalidDirectory(msg) => format!("Directory error: {}", msg),
+            ErrorKind::DirectoryAccess(msg) => format!("Access problem: {}", msg),
+        };
+        write!(f, "{}", msg)
+    }
 }
 
 pub struct HTMLBody {
@@ -70,7 +83,10 @@ impl HTMLBody {
                 self.rendered_body = re.replace_all(&embedded, "> <").to_string();
                 Ok(())
             }
-            Err(_) => Err(ErrorKind::Style),
+            Err(_) => {
+                let msg = "The style path is not correct.".to_string();
+                Err(ErrorKind::Style(msg))
+            }
         }
     }
 }
@@ -120,20 +136,26 @@ impl Email {
                 };
                 Ok(email)
             }
-            Err(_) => Err(ErrorKind::InvalidDirectory),
+            Err(e) => {
+                let msg = format!("{}", e);
+                Err(ErrorKind::InvalidDirectory(msg))
+            }
         }
     }
 
-    fn render_text(&mut self, file_name: &str) -> Result<String, ErrorKind> {
+    fn render_text(&mut self, file_name: &str, new_line: bool) -> Result<String, ErrorKind> {
         let template_name = format!("{}/{}", self.template_name, file_name);
         match self.template.render(&template_name, &self.context_data) {
             Ok(mut rendered) => {
                 rendered = rendered
                     .replace("\n\n\n", "<br/><br/>")
                     .replace("\n\n", "<br/>");
-                self.strip_tags(&rendered)
+                self.strip_tags(&rendered, new_line)
             }
-            Err(_) => Err(ErrorKind::MissingContext),
+            Err(e) => {
+                let msg = format!("{}", e);
+                Err(ErrorKind::MissingContext(msg))
+            }
         }
     }
 
@@ -145,16 +167,19 @@ impl Email {
                 html_body.render_html(subject, &rendered)?;
                 Ok(html_body.rendered_body)
             }
-            Err(_) => Err(ErrorKind::MissingContext),
+            Err(e) => {
+                let msg = format!("{}", e);
+                Err(ErrorKind::MissingContext(msg))
+            }
         }
     }
 
     pub fn render_all(&mut self) -> Result<(), ErrorKind> {
-        self.subject = self.render_text(constants::FILE_SUBJECT)?;
+        self.subject = self.render_text(constants::FILE_SUBJECT, false)?;
         self.body = self.render_html(&self.subject.clone(), constants::FILE_BODY)?;
         self.body_text = self
-            .render_text(constants::FILE_BODY_TEXT)
-            .unwrap_or(self.strip_tags(self.body.clone().as_str())?);
+            .render_text(constants::FILE_BODY_TEXT, true)
+            .unwrap_or(self.strip_tags(self.body.clone().as_str(), true)?);
         Ok(())
     }
 
@@ -166,7 +191,7 @@ impl Email {
         Ok(())
     }
 
-    fn strip_tags(&mut self, text: &str) -> Result<String, ErrorKind> {
+    fn strip_tags(&mut self, text: &str, new_line: bool) -> Result<String, ErrorKind> {
         // TODO: is it possible to trim unwanted chars from `html2text`?
         let stripped = html2text::from_read(text.as_bytes(), constants::TEXT_WIDTH);
         let trimmed: &[_] = &['─', '\n'];
@@ -176,7 +201,11 @@ impl Email {
             .map(|l| l.trim_end().to_string())
             .collect::<Vec<String>>()
             .join("\n");
-        Ok(normalized)
+        Ok(format!(
+            "{}{}",
+            normalized,
+            if new_line { "\n" } else { "" }
+        ))
     }
 }
 
@@ -187,19 +216,24 @@ pub fn generate_all_templates(src_dir: PathBuf, dst_dir: PathBuf) -> Result<(), 
         Ok(template_names) => {
             for template_name in template_names {
                 let template_dst = dst_dir.join(&template_name);
-                if let Err(_) = fs::create_dir_all(&template_dst) {
-                    return Err(ErrorKind::InvalidDirectory);
+                if let Err(e) = fs::create_dir_all(&template_dst) {
+                    let msg = format!("{}", e);
+                    return Err(ErrorKind::InvalidDirectory(msg));
                 }
                 // TODO: do we need to clone these paths?
                 let mut email =
                     Email::new(src_dir.clone(), dst_dir.clone(), template_name.clone())?;
                 email.render_all()?;
-                if let Err(_) = email.save_rendered_outputs() {
-                    return Err(ErrorKind::DirectoryAccess);
+                if let Err(e) = email.save_rendered_outputs() {
+                    let msg = format!("{}", e);
+                    return Err(ErrorKind::DirectoryAccess(msg));
                 }
             }
             Ok(())
         }
-        Err(_) => Err(ErrorKind::InvalidDirectory),
+        Err(e) => {
+            let msg = format!("{}", e);
+            Err(ErrorKind::InvalidDirectory(msg))
+        }
     }
 }

@@ -13,13 +13,16 @@ users, but if you forget that somehow, MEYL will auto-generate it for you.
 ## Simple Usage
 
 ```
+# create new project directory
+meyl new email-templates
+
 # generate emails
-meyl generate --source=templates/src/ \
-             --destination=templates/dst/
+meyl generate --source=email-templates/src/ \
+              --destination=email-templates/dst/
 
 # send a test mail to preview
-meyl send --template=templates/dst/wedding-invitation/ \
-         --email="john.doe@localhost"
+meyl send --template=email-templates/dst/wedding-invitation/ \
+          --email="john.doe@localhost"
 ```
 
 ## Immutable Variables
@@ -38,6 +41,7 @@ You don't need to create also a body_text.html but in case, MEYL will
 auto-generate it for making your emails more accessible for all human being.
 
 ```
+email-templates
 |
 |- dst                       Destination Template Folder
 |  |- payroll                Template Name: Payroll

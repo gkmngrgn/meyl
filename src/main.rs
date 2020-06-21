@@ -13,20 +13,28 @@ struct Opt {
 #[derive(StructOpt)]
 #[structopt(about = "Static Email Generator")]
 enum Sub {
-    /// Generates all available emails using [SOURCE] folder
+    /// Create a new email template directory
     #[structopt(display_order = 1)]
+    New {
+        /// Email template directory
+        #[structopt(short, long)]
+        source: PathBuf,
+    },
+
+    /// Generates all available emails using [SOURCE] directory
+    #[structopt(display_order = 2)]
     Generate {
-        /// Source template folder
+        /// Source template directory
         #[structopt(short, long)]
         source: PathBuf,
 
-        /// Output email folder
+        /// Output email directory
         #[structopt(short, long)]
         destination: PathBuf,
     },
 
     /// Sends a test mail to preview
-    #[structopt(display_order = 2)]
+    #[structopt(display_order = 3)]
     Send {
         /// Email template file
         #[structopt(short, long)]
@@ -42,28 +50,39 @@ enum Sub {
     },
 }
 
+fn create_new_directory(path: &PathBuf) -> Result<(), ErrorKind> {
+    if path.exists() {
+        let msg = format!(
+            "{:?} already exists. Try a different one or remove the directory.",
+            path
+        );
+        return Err(ErrorKind::InvalidDirectory(msg));
+    }
+    // TODO 1: create <path>/src/ dir
+    // TODO 2: create <path>/dst/ dir
+    // TODO 3: create <path>/src/example/ with config.toml, subject.html, body.html, and body_text.html
+    // TODO 4: create <path>/src/style.css file
+    // TODO 5: create <path>/src/base.html file
+    Ok(())
+}
+
 fn main() {
     let opt = Opt::from_args();
     match opt.cmd {
+        Sub::New { source } => match create_new_directory(&source) {
+            Ok(_) => println!(
+                "Your new email template directory is created in {:?}",
+                source
+            ),
+            Err(e) => eprintln!("{}", e),
+        },
         Sub::Generate {
             source,
             destination,
-        } => {
-            let msg = match generate_all_templates(source, destination) {
-                Ok(_) => "All templates are generated successfully.",
-                Err(e) => match e {
-                    ErrorKind::Style => "The style path is not correct.",
-                    ErrorKind::InvalidDirectory => {
-                        "The template engine couldn't find the source or destination directory."
-                    }
-                    ErrorKind::MissingContext => "There are undefined variables in the template.",
-                    ErrorKind::DirectoryAccess => {
-                        "There's no access to write template files to the destination directory."
-                    }
-                },
-            };
-            println!("{}", msg);
-        }
+        } => match generate_all_templates(source, destination) {
+            Ok(_) => println!("All templates are generated successfully."),
+            Err(e) => eprintln!("{:?}", e),
+        },
         Sub::Send {
             template,
             subject,

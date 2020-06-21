@@ -2,6 +2,7 @@ use html2text;
 use inline_assets::{inline_html_string, Config as InlinerConfig};
 use regex::Regex;
 use std::env;
+use std::fmt;
 use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -11,10 +12,22 @@ use config::get_context_data;
 
 #[derive(Debug)]
 pub enum ErrorKind {
-    Style,
-    MissingContext,
-    InvalidDirectory,
-    DirectoryAccess,
+    Style(String),
+    MissingContext(String),
+    InvalidDirectory(String),
+    DirectoryAccess(String),
+}
+
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let msg = match self {
+            ErrorKind::Style(msg) => format!("Style error: {}", msg),
+            ErrorKind::MissingContext(msg) => format!("Context data error: {}", msg),
+            ErrorKind::InvalidDirectory(msg) => format!("Directory error: {}", msg),
+            ErrorKind::DirectoryAccess(msg) => format!("Access problem: {}", msg),
+        };
+        write!(f, "{}", msg)
+    }
 }
 
 pub struct HTMLBody {
@@ -70,7 +83,10 @@ impl HTMLBody {
                 self.rendered_body = re.replace_all(&embedded, "> <").to_string();
                 Ok(())
             }
-            Err(_) => Err(ErrorKind::Style),
+            Err(_) => {
+                let msg = "The style path is not correct.".to_string();
+                Err(ErrorKind::Style(msg))
+            }
         }
     }
 }
@@ -120,7 +136,10 @@ impl Email {
                 };
                 Ok(email)
             }
-            Err(_) => Err(ErrorKind::InvalidDirectory),
+            Err(e) => {
+                let msg = format!("{}", e);
+                Err(ErrorKind::InvalidDirectory(msg))
+            }
         }
     }
 
@@ -133,7 +152,10 @@ impl Email {
                     .replace("\n\n", "<br/>");
                 self.strip_tags(&rendered)
             }
-            Err(_) => Err(ErrorKind::MissingContext),
+            Err(e) => {
+                let msg = format!("{}", e);
+                Err(ErrorKind::MissingContext(msg))
+            }
         }
     }
 
@@ -145,7 +167,10 @@ impl Email {
                 html_body.render_html(subject, &rendered)?;
                 Ok(html_body.rendered_body)
             }
-            Err(_) => Err(ErrorKind::MissingContext),
+            Err(e) => {
+                let msg = format!("{}", e);
+                Err(ErrorKind::MissingContext(msg))
+            }
         }
     }
 
@@ -187,19 +212,24 @@ pub fn generate_all_templates(src_dir: PathBuf, dst_dir: PathBuf) -> Result<(), 
         Ok(template_names) => {
             for template_name in template_names {
                 let template_dst = dst_dir.join(&template_name);
-                if let Err(_) = fs::create_dir_all(&template_dst) {
-                    return Err(ErrorKind::InvalidDirectory);
+                if let Err(e) = fs::create_dir_all(&template_dst) {
+                    let msg = format!("{}", e);
+                    return Err(ErrorKind::InvalidDirectory(msg));
                 }
                 // TODO: do we need to clone these paths?
                 let mut email =
                     Email::new(src_dir.clone(), dst_dir.clone(), template_name.clone())?;
                 email.render_all()?;
-                if let Err(_) = email.save_rendered_outputs() {
-                    return Err(ErrorKind::DirectoryAccess);
+                if let Err(e) = email.save_rendered_outputs() {
+                    let msg = format!("{}", e);
+                    return Err(ErrorKind::DirectoryAccess(msg));
                 }
             }
             Ok(())
         }
-        Err(_) => Err(ErrorKind::InvalidDirectory),
+        Err(e) => {
+            let msg = format!("{}", e);
+            Err(ErrorKind::InvalidDirectory(msg))
+        }
     }
 }

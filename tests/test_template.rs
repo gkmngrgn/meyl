@@ -21,7 +21,7 @@ fn get_email(src_name: &str, template_name: &str, test_name: &str) -> template::
 }
 
 #[test]
-fn generate_all_templates() {
+fn test_generate_all_templates() {
     let src_dirs = &["src", "src-simple"];
     src_dirs.iter().for_each(|dir_name| {
         let src_dir = get_test_dir(vec!["examples", dir_name]);

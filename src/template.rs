@@ -7,6 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
 
+use crate::template_functions::register_functions;
 use crate::{config, constants, find_all_templates};
 use config::get_context_data;
 
@@ -120,7 +121,7 @@ impl Email {
             Ok(mut template) => {
                 // tera settings
                 template.autoescape_on(vec![constants::FILE_BODY]);
-                // TODO: register tera filters here.
+                register_functions(&mut template);
 
                 // template struct
                 let template_dir = src_dir.join(&template_name);

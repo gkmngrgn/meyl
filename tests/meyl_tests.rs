@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use meyl::template;
 use std::path::PathBuf;
 
 pub fn get_test_dir(sub_dirs: Vec<&str>) -> PathBuf {
@@ -28,4 +29,20 @@ pub fn get_random_test_dir(sub_dirs: Vec<&str>, name: &str) -> PathBuf {
         number += 1;
     }
     dir
+}
+
+pub fn normalize_html(body: &str) -> String {
+    body.trim_matches(|c| c == '\n' || c == ' ')
+        .split("\n")
+        .map(|l| l.trim_start().to_string())
+        .collect::<Vec<String>>()
+        .join(" ")
+}
+
+pub fn get_email(src_name: &str, template_name: &str, test_name: &str) -> template::Email {
+    let src_dir = get_test_dir(vec!["examples", src_name]);
+    let dst_dir = get_random_test_dir(vec!["examples"], test_name);
+    let mut email = template::Email::new(src_dir, dst_dir, template_name.to_string()).unwrap();
+    email.render_all().unwrap();
+    email
 }

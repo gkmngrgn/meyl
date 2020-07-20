@@ -75,6 +75,8 @@ email-templates
 - [ ] multilanguage support.
 - [ ] digest css styles to html inside.
 - [ ] support to embed markdown files to the email body as a variable.
+- [ ] error outputs are not helpful. if there's an undefined variable, tell me which one is that.
+      if a function or a filter has been used incorrectly, tell me what it is.
 - [x] auto-generate executable files every release (linux, win, mac).
 - [x] allow only BODY content in html files, we can add HTML and HEAD parts
       programmatically.

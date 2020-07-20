@@ -156,7 +156,7 @@ fn main() {
             destination,
         } => match generate_all_templates(source, destination) {
             Ok(_) => println!("All templates are generated successfully."),
-            Err(e) => eprintln!("{:?}", e),
+            Err(e) => eprintln!("{}", e),
         },
         Sub::Send {
             template,

@@ -4,7 +4,7 @@ use meyl_tests::*;
 
 #[test]
 fn test_static_function() {
-    let email = get_email("src-simple", "newsletter", "test_static_function");
+    let email = get_email("src_simple", "newsletter", "test_static_function");
     let expected_subject = "A link in subject: http://gokmengorgen.net/en/";
     let expected_body_text = "A link in body text: https://gokmengorgen.net/live/";
     let expected_body = normalize_html(

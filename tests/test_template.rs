@@ -6,7 +6,7 @@ use meyl_tests::*;
 
 #[test]
 fn test_generate_all_templates() {
-    let src_dirs = &["src", "src-simple"];
+    let src_dirs = &["src", "src_simple"];
     src_dirs.iter().for_each(|dir_name| {
         let src_dir = get_test_dir(vec!["examples", dir_name]);
         let dst_dir = get_random_test_dir(vec!["examples"], "generate_all_templates-1");
@@ -46,7 +46,7 @@ fn test_text() {
 
 #[test]
 fn test_body() {
-    let email = get_email("src-simple", "new-article", "test_body");
+    let email = get_email("src_simple", "new_article", "test_body");
     let expected_body = normalize_html(
         r#"
         <!DOCTYPE html>

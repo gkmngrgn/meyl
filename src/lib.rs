@@ -1,6 +1,7 @@
 pub mod config;
 pub mod constants;
 pub mod template;
+mod template_functions;
 
 use std::fs;
 use std::path::PathBuf;

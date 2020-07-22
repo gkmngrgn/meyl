@@ -2,27 +2,11 @@ mod meyl_tests;
 
 use indoc::indoc;
 use meyl::{constants, template};
-use meyl_tests::{get_random_test_dir, get_test_dir};
-
-fn normalize_html(body: &str) -> String {
-    body.trim_matches(|c| c == '\n' || c == ' ')
-        .split("\n")
-        .map(|l| l.trim_start().to_string())
-        .collect::<Vec<String>>()
-        .join(" ")
-}
-
-fn get_email(src_name: &str, template_name: &str, test_name: &str) -> template::Email {
-    let src_dir = get_test_dir(vec!["examples", src_name]);
-    let dst_dir = get_random_test_dir(vec!["examples"], test_name);
-    let mut email = template::Email::new(src_dir, dst_dir, template_name.to_string()).unwrap();
-    email.render_all().unwrap();
-    email
-}
+use meyl_tests::*;
 
 #[test]
-fn generate_all_templates() {
-    let src_dirs = &["src", "src-simple"];
+fn test_generate_all_templates() {
+    let src_dirs = &["src", "src_simple"];
     src_dirs.iter().for_each(|dir_name| {
         let src_dir = get_test_dir(vec!["examples", dir_name]);
         let dst_dir = get_random_test_dir(vec!["examples"], "generate_all_templates-1");
@@ -62,7 +46,7 @@ fn test_text() {
 
 #[test]
 fn test_body() {
-    let email = get_email("src-simple", "new-article", "test_body");
+    let email = get_email("src_simple", "new_article", "test_body");
     let expected_body = normalize_html(
         r#"
         <!DOCTYPE html>

@@ -5,3 +5,5 @@ pub const FILE_STYLE: &str = "style.css";
 pub const FILE_CONFIG: &str = "config.toml";
 
 pub const TEXT_WIDTH: usize = 80;
+
+pub const CTX_BASE_URL: &str = "BASE_URL";

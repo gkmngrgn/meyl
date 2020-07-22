@@ -7,8 +7,9 @@ use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
 
+use crate::template_functions::register_functions;
 use crate::{config, constants, find_all_templates};
-use config::get_context_data;
+use config::{get_context, Config};
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -96,7 +97,7 @@ pub struct Email {
     template_name: String,
     src_dir: PathBuf,
     dst_dir: PathBuf,
-    context_data: Context,
+    context: Context,
     pub subject: String,
     pub body: String,
     pub body_text: String,
@@ -116,20 +117,26 @@ impl Email {
                 .collect::<Vec<&str>>()
                 .join("/")
         );
+        let template_dir = src_dir.join(&template_name);
+        let config = match Config::new(template_dir) {
+            Ok(config) => config,
+            Err(_) => Config::default(),
+        };
+        let context = get_context(&config);
+
         match Tera::new(&template_path) {
             Ok(mut template) => {
                 // tera settings
                 template.autoescape_on(vec![constants::FILE_BODY]);
-                // TODO: register tera filters here.
+                register_functions(&mut template, config);
 
-                // template struct
-                let template_dir = src_dir.join(&template_name);
+                // email template struct
                 let email = Self {
                     template,
                     template_name,
                     src_dir,
                     dst_dir,
-                    context_data: get_context_data(template_dir),
+                    context,
                     subject: "".to_string(),
                     body: "".to_string(),
                     body_text: "".to_string(),
@@ -145,7 +152,7 @@ impl Email {
 
     fn render_text(&mut self, file_name: &str, new_line: bool) -> Result<String, ErrorKind> {
         let template_name = format!("{}/{}", self.template_name, file_name);
-        match self.template.render(&template_name, &self.context_data) {
+        match self.template.render(&template_name, &self.context) {
             Ok(mut rendered) => {
                 rendered = rendered
                     .replace("\n\n\n", "<br/><br/>")
@@ -161,7 +168,7 @@ impl Email {
 
     fn render_html(&mut self, subject: &str, file_name: &str) -> Result<String, ErrorKind> {
         let template_name = format!("{}/{}", self.template_name, file_name);
-        match self.template.render(&template_name, &self.context_data) {
+        match self.template.render(&template_name, &self.context) {
             Ok(rendered) => {
                 let mut html_body = HTMLBody::new(self.src_dir.clone());
                 html_body.render_html(subject, &rendered)?;

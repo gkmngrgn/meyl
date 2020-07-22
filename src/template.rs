@@ -1,4 +1,3 @@
-use html2text;
 use inline_assets::{inline_html_string, Config as InlinerConfig};
 use regex::Regex;
 use std::env;
@@ -76,7 +75,7 @@ impl HTMLBody {
             Ok(mut embedded) => {
                 embedded = embedded
                     .trim_matches(|c| c == '\n' || c == ' ')
-                    .split("\n")
+                    .split('\n')
                     .map(|l| l.trim_start().to_string())
                     .collect::<Vec<String>>()
                     .join(" ");
@@ -118,7 +117,7 @@ impl Email {
                 .join("/")
         );
         let template_dir = src_dir.join(&template_name);
-        let config = match Config::new(template_dir) {
+        let config = match Config::new(&[&src_dir, &template_dir]) {
             Ok(config) => config,
             Err(_) => Config::default(),
         };

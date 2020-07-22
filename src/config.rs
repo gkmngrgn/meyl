@@ -1,7 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
 use std::{collections::HashMap, fs::read_to_string, path::PathBuf};
-use tera;
-use toml;
 
 use crate::constants;
 
@@ -14,11 +12,23 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(template_dir: PathBuf) -> std::io::Result<Self> {
-        let config_path = template_dir.join(constants::FILE_CONFIG);
-        let config_str = read_to_string(&config_path)?;
-        let config: Config = toml::from_str(&config_str)?;
+    pub fn new(dirs: &[&PathBuf]) -> std::io::Result<Self> {
+        let mut config = Config::default();
+        for dir in dirs {
+            let config_path = dir.join(constants::FILE_CONFIG);
+            if !config_path.exists() {
+                continue;
+            }
+            let config_str = read_to_string(&config_path)?;
+            let sub_config: Config = toml::from_str(&config_str)?;
+            config.merge(sub_config);
+        }
         Ok(config)
+    }
+
+    fn merge(&mut self, config: Self) {
+        self.base_url = Some(toml::Value::String(config.get_base_url()));
+        // TODO: merge context_data
     }
 
     pub fn get_base_url(&self) -> String {

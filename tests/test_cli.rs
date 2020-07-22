@@ -1,6 +1,5 @@
 mod meyl_tests;
 
-use meyl;
 use meyl_tests::get_test_dir;
 
 #[test]

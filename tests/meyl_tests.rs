@@ -33,7 +33,7 @@ pub fn get_random_test_dir(sub_dirs: Vec<&str>, name: &str) -> PathBuf {
 
 pub fn normalize_html(body: &str) -> String {
     body.trim_matches(|c| c == '\n' || c == ' ')
-        .split("\n")
+        .split('\n')
         .map(|l| l.trim_start().to_string())
         .collect::<Vec<String>>()
         .join(" ")

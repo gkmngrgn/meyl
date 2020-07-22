@@ -1,5 +1,4 @@
 use indoc::indoc;
-use meyl;
 use meyl::constants;
 use meyl::template::{generate_all_templates, ErrorKind};
 use std::collections::HashMap;

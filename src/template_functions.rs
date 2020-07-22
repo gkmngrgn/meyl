@@ -1,6 +1,5 @@
 use crate::config::Config;
 use std::collections::HashMap;
-use tera;
 
 type TeraTable = HashMap<String, tera::Value>;
 

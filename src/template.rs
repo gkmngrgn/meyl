@@ -9,7 +9,7 @@ use tera::{Context, Tera};
 
 use crate::template_functions::register_functions;
 use crate::{config, constants, find_all_templates};
-use config::{get_context, parse_config, Config};
+use config::{get_context, Config};
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -118,17 +118,17 @@ impl Email {
                 .join("/")
         );
         let template_dir = src_dir.join(&template_name);
-        let config = match parse_config(template_dir) {
+        let config = match Config::new(template_dir) {
             Ok(config) => config,
-            _ => Config::default(),
+            Err(_) => Config::default(),
         };
-        let context = get_context(config);
+        let context = get_context(&config);
 
         match Tera::new(&template_path) {
             Ok(mut template) => {
                 // tera settings
                 template.autoescape_on(vec![constants::FILE_BODY]);
-                register_functions(&mut template, context.into_json());
+                register_functions(&mut template, config);
 
                 // email template struct
                 let email = Self {

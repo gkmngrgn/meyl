@@ -1,0 +1,4 @@
+base_url = "https://gokmengorgen.net"
+
+[context_data]
+say_hello = "Hello!"

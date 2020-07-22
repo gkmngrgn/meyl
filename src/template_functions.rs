@@ -1,27 +1,24 @@
-use crate::constants::CTX_BASE_URL;
+use crate::config::Config;
 use std::collections::HashMap;
-use tera::{from_value, to_value, Result, Tera, Value};
+use tera;
 
-type GlobalFn = Box<dyn Fn(HashMap<String, Value>) -> Result<Value> + Sync + Send>;
+type TeraTable = HashMap<String, tera::Value>;
 
-fn get_static_url(context_data: HashMap<String, String>) -> GlobalFn {
-    Box::new(move |args| -> Result<Value> {
-        let base_url = match context_data.get(CTX_BASE_URL) {
-            Some(val) => val.as_str().unwrap(),
-            None => "http://localhost",
-        };
-        match args.get("path") {
-            Some(val) => Ok(to_value(match from_value::<String>(val.clone()) {
-                Ok(v) => format!("{}{}", base_url, v),
-                Err(_) => base_url.to_string(),
-            })
-            .unwrap()),
-            None => Err("oops".into()),
-        }
-    })
+fn get_static_url(args: &TeraTable, base_url: String) -> tera::Result<tera::Value> {
+    let url = match args.get("path") {
+        Some(p) => [base_url, p.as_str().expect("str expected.").to_string()]
+            .iter()
+            .map(|i| i.trim_start_matches('/'))
+            .collect::<Vec<&str>>()
+            .join("/"),
+        None => "None".to_string(),
+    };
+    Ok(tera::Value::from(url))
 }
 
-pub(crate) fn register_functions(template: &mut Tera, _context_data: Value) {
-    let context_data2: HashMap<String, String> = HashMap::new();
-    template.register_function("static", get_static_url(context_data2));
+pub fn register_functions(template: &mut tera::Tera, config: Config) {
+    template.register_function("static", move |args: &TeraTable| {
+        let base_url = config.get_base_url();
+        get_static_url(args, base_url)
+    });
 }
